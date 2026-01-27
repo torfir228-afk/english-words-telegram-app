@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id           Int                    @id @default(autoincrement())
+  name         String                 @unique
+  displayName  String
+  iconEmoji    String?
+  words        Word[]
+  userProgress UserCategoryProgress[]
+  createdAt    DateTime               @default(now())
+}
+
+model Word {
+  id           Int                @id @default(autoincrement())
+  english      String
+  russian      String
+  categoryId   Int
+  category     Category           @relation(fields: [categoryId], references: [id])
+  examples     Example[]
+  userProgress UserWordProgress[]
+  createdAt    DateTime           @default(now())
+
+  @@unique([english, categoryId])
+}
+
+model Example {
+  id          Int     @id @default(autoincrement())
+  wordId      Int
+  word        Word    @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  sentence    String
+  translation String?
+}
+
+model User {
+  id             Int                    @id @default(autoincrement())
+  telegramId     BigInt                 @unique
+  username       String?
+  firstName      String?
+  lastName       String?
+  languageCode   String?                @default("ru")
+  deliveryHour   Int                    @default(9)
+  deliveryMinute Int                    @default(0)
+  timezone       String                 @default("Europe/Moscow")
+  isActive       Boolean                @default(true)
+  categories     UserCategoryProgress[]
+  wordProgress   UserWordProgress[]
+  lessonHistory  LessonHistory[]
+  testResults    TestResult[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+}
+
+model UserCategoryProgress {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId   Int
+  category     Category @relation(fields: [categoryId], references: [id])
+  isSelected   Boolean  @default(false)
+  wordsLearned Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, categoryId])
+}
+
+model UserWordProgress {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordId       Int
+  word         Word      @relation(fields: [wordId], references: [id])
+  status       String    @default("NEW")
+  sentCount    Int       @default(0)
+  correctCount Int       @default(0)
+  lastSentAt   DateTime?
+  lastTestedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([userId, wordId])
+}
+
+model LessonHistory {
+  id      Int      @id @default(autoincrement())
+  userId  Int
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordIds Int[]
+  sentAt  DateTime @default(now())
+}
+
+model TestResult {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalQuestions Int
+  correctAnswers Int
+  percentage     Float
+  answers        Json
+  completedAt    DateTime @default(now())
+}
