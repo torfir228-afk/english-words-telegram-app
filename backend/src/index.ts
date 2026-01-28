@@ -45,7 +45,7 @@ async function main() {
   startDailyScheduler();
 
   // Start server
-  app.listen(env.API_PORT, () => {
+  app.listen(env.API_PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${env.API_PORT}`);
   });
 
